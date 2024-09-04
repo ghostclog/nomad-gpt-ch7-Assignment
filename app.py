@@ -130,7 +130,7 @@ llm = ChatOpenAI(
     callbacks=[
         ChatCallbackHandler(),
     ],
-)
+    openai_api_key=key
 
 prompt = ChatPromptTemplate.from_messages(
     [
@@ -170,32 +170,32 @@ if file:
 else:
     st.session_state["messages"] = []             
     """)
+if key:
+    llm = ChatOpenAI(
+        temperature=0.5,
+        streaming=True,
+        callbacks=[
+            ChatCallbackHandler(),
+        ],
+        openai_api_key=key
+    )
 
-llm = ChatOpenAI(
-    temperature=0.5,
-    streaming=True,
-    callbacks=[
-        ChatCallbackHandler(),
-    ],
-    openai_api_key=key
-)
-
-if file:
-    retriever = embed_file(file)
-    send_message("준비됬어요! 질문해주세요!", "ai", save=False)
-    paint_history()
-    message = st.chat_input("당신이 업로드한 문서에 대한 질문을 주세요.")
-    if message:
-        send_message(message, "human")
-        chain = (
-            {
-                "context": retriever | RunnableLambda(format_docs),
-                "question": RunnablePassthrough(),
-            }
-            | prompt
-            | llm
-        )
-        with st.chat_message("ai"):
-            response = chain.invoke(message)
-else:
-    st.session_state["messages"] = []
+    if file:
+        retriever = embed_file(file)
+        send_message("준비됬어요! 질문해주세요!", "ai", save=False)
+        paint_history()
+        message = st.chat_input("당신이 업로드한 문서에 대한 질문을 주세요.")
+        if message:
+            send_message(message, "human")
+            chain = (
+                {
+                    "context": retriever | RunnableLambda(format_docs),
+                    "question": RunnablePassthrough(),
+                }
+                | prompt
+                | llm
+            )
+            with st.chat_message("ai"):
+                response = chain.invoke(message)
+    else:
+        st.session_state["messages"] = []
