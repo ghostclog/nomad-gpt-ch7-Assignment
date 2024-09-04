@@ -53,15 +53,8 @@ with st.sidebar:
     st.header("깃허브 레포지토리 링크: https://github.com/ghostclog/nomad-gpt-ch7-Assignment")
     st.header("- function.py 내용 >>>")
     st.markdown("""
-from langchain.document_loaders import UnstructuredFileLoader
-from langchain.embeddings import CacheBackedEmbeddings, OpenAIEmbeddings
-from langchain.storage import LocalFileStore
-from langchain.text_splitter import CharacterTextSplitter
-from langchain.vectorstores.faiss import FAISS
-import streamlit as st
-             
 @st.cache_data(show_spinner="파일을 임베딩 중입니다...")
-def embed_file(file):
+def embed_file(file,key):
     file_content = file.read()
     file_path = f"./.cache/files/{file.name}"
     with open(file_path, "wb") as f:
@@ -74,18 +67,21 @@ def embed_file(file):
     )
     loader = UnstructuredFileLoader(file_path)
     docs = loader.load_and_split(text_splitter=splitter)
-    embeddings = OpenAIEmbeddings()
+    embeddings = OpenAIEmbeddings(openai_api_type=key)
     cached_embeddings = CacheBackedEmbeddings.from_bytes_store(embeddings, cache_dir)
     vectorstore = FAISS.from_documents(docs, cached_embeddings)
     retriever = vectorstore.as_retriever()
     return retriever
+
 def save_message(message, role):
     st.session_state["messages"].append({"message": message, "role": role})
+
 def send_message(message, role, save=True):
     with st.chat_message(role):
         st.markdown(message)
     if save:
         save_message(message, role)
+
 def paint_history():
     for message in st.session_state["messages"]:
         send_message(
@@ -93,19 +89,13 @@ def paint_history():
             message["role"],
             save=False,
         )
+
 def format_docs(docs):
     return "\n\n".join(document.page_content for document in docs)
 """)
     st.header("- app.py 내용 >>")
     st.markdown(
 """
-from langchain.prompts import ChatPromptTemplate
-from langchain.schema.runnable import RunnableLambda, RunnablePassthrough
-from langchain.chat_models import ChatOpenAI
-from langchain.callbacks.base import BaseCallbackHandler
-from functions import embed_file,save_message,send_message,paint_history,format_docs
-import streamlit as st
-
 st.set_page_config(
     page_title="Assignment5",
     page_icon="📃",
@@ -124,14 +114,6 @@ class ChatCallbackHandler(BaseCallbackHandler):
         self.message += token
         self.message_box.markdown(self.message)
 
-llm = ChatOpenAI(
-    temperature=0.5,
-    streaming=True,
-    callbacks=[
-        ChatCallbackHandler(),
-    ],
-    openai_api_key=key
-
 prompt = ChatPromptTemplate.from_messages(
     [
         (
@@ -146,29 +128,42 @@ prompt = ChatPromptTemplate.from_messages(
     ]
 )
 
+### 디자인 ###
 st.title("Assignment 5")
-st.markdown('''어서 오세요!!      
+st.markdown('''어서 오세요!!
+            
 챗봇을 사용하여, 당신이 업로드한 문서에 대한 질문을 해보세요!!!''')
+### 디자인 ###
+if key:
+    llm = ChatOpenAI(
+        temperature=0.5,
+        streaming=True,
+        callbacks=[
+            ChatCallbackHandler(),
+        ],
+        openai_api_key=key
+    )
 
-if file:
-    retriever = embed_file(file)
-    send_message("준비됬어요! 질문해주세요!", "ai", save=False)
-    paint_history()
-    message = st.chat_input("당신이 업로드한 문서에 대한 질문을 주세요.")
-    if message:
-        send_message(message, "human")
-        chain = (
-            {
-                "context": retriever | RunnableLambda(format_docs),
-                "question": RunnablePassthrough(),
-            }
-            | prompt
-            | llm
-        )
-        with st.chat_message("ai"):
-            response = chain.invoke(message)
-else:
-    st.session_state["messages"] = []             
+    if file:
+        retriever = embed_file(file,key)
+        send_message("준비됬어요! 질문해주세요!", "ai", save=False)
+        paint_history()
+        message = st.chat_input("당신이 업로드한 문서에 대한 질문을 주세요.")
+        if message:
+            send_message(message, "human")
+            chain = (
+                {
+                    "context": retriever | RunnableLambda(format_docs),
+                    "question": RunnablePassthrough(),
+                }
+                | prompt
+                | llm
+            )
+            with st.chat_message("ai"):
+                response = chain.invoke(message)
+    else:
+        st.session_state["messages"] = []
+
     """)
 if key:
     llm = ChatOpenAI(
@@ -181,7 +176,7 @@ if key:
     )
 
     if file:
-        retriever = embed_file(file)
+        retriever = embed_file(file,key)
         send_message("준비됬어요! 질문해주세요!", "ai", save=False)
         paint_history()
         message = st.chat_input("당신이 업로드한 문서에 대한 질문을 주세요.")
