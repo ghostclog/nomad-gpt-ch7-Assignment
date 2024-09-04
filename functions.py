@@ -6,7 +6,7 @@ from langchain.vectorstores.faiss import FAISS
 import streamlit as st
 
 @st.cache_data(show_spinner="파일을 임베딩 중입니다...")
-def embed_file(file):
+def embed_file(file,key):
     file_content = file.read()
     file_path = f"./.cache/files/{file.name}"
     with open(file_path, "wb") as f:
@@ -19,7 +19,7 @@ def embed_file(file):
     )
     loader = UnstructuredFileLoader(file_path)
     docs = loader.load_and_split(text_splitter=splitter)
-    embeddings = OpenAIEmbeddings()
+    embeddings = OpenAIEmbeddings(openai_api_type=key)
     cached_embeddings = CacheBackedEmbeddings.from_bytes_store(embeddings, cache_dir)
     vectorstore = FAISS.from_documents(docs, cached_embeddings)
     retriever = vectorstore.as_retriever()
