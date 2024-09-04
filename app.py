@@ -46,10 +46,11 @@ st.markdown("""어서 오세요!!
 
 with st.sidebar:
     key = st.text_input("여기에 당신의 api 키를 입력해주세요.")
-    file = st.file_uploader(
-        "Upload a .txt .pdf or .docx file",
-        type=["pdf", "txt", "docx"],
-    )
+    if key:
+        file = st.file_uploader(
+            "Upload a .txt .pdf or .docx file",
+            type=["pdf", "txt", "docx"],
+        )
     st.header("깃허브 레포지토리 링크: https://github.com/ghostclog/nomad-gpt-ch7-Assignment")
     st.header("- function.py 내용 >>>")
     st.markdown("""
@@ -134,6 +135,15 @@ st.markdown('''어서 오세요!!
             
 챗봇을 사용하여, 당신이 업로드한 문서에 대한 질문을 해보세요!!!''')
 ### 디자인 ###
+
+with st.sidebar:
+    key = st.text_input("여기에 당신의 api 키를 입력해주세요.")
+    if key:
+        file = st.file_uploader(
+            "Upload a .txt .pdf or .docx file",
+            type=["pdf", "txt", "docx"],
+        )
+
 if key:
     llm = ChatOpenAI(
         temperature=0.5,
