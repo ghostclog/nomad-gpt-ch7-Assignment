@@ -23,14 +23,6 @@ class ChatCallbackHandler(BaseCallbackHandler):
         self.message += token
         self.message_box.markdown(self.message)
 
-llm = ChatOpenAI(
-    temperature=0.5,
-    streaming=True,
-    callbacks=[
-        ChatCallbackHandler(),
-    ],
-)
-
 prompt = ChatPromptTemplate.from_messages(
     [
         (
@@ -53,11 +45,11 @@ st.markdown("""어서 오세요!!
 ### 디자인 ###
 
 with st.sidebar:
+    key = st.text_input("여기에 당신의 api 키를 입력해주세요.")
     file = st.file_uploader(
         "Upload a .txt .pdf or .docx file",
         type=["pdf", "txt", "docx"],
     )
-
     st.header("깃허브 레포지토리 링크: https://github.com/ghostclog/nomad-gpt-ch7-Assignment")
     st.header("- function.py 내용 >>>")
     st.markdown("""
@@ -178,6 +170,15 @@ if file:
 else:
     st.session_state["messages"] = []             
     """)
+
+llm = ChatOpenAI(
+    temperature=0.5,
+    streaming=True,
+    callbacks=[
+        ChatCallbackHandler(),
+    ],
+    openai_api_key=key
+)
 
 if file:
     retriever = embed_file(file)
