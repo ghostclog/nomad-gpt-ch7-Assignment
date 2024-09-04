@@ -58,6 +58,7 @@ with st.sidebar:
         type=["pdf", "txt", "docx"],
     )
 
+    st.header("깃허브 레포지토리 링크: https://github.com/ghostclog/nomad-gpt-ch7-Assignment")
     st.header("- function.py 내용 >>>")
     st.markdown("""
 from langchain.document_loaders import UnstructuredFileLoader
